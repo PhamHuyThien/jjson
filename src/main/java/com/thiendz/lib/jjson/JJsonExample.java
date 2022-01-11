@@ -5,7 +5,16 @@ import java.util.Map;
 
 public class JJsonExample {
     public static void main(String[] args) {
-        readJson();
+//        readJson();
+        sort();
+    }
+
+    public static void sort() {
+        String jsonStr = "[1, 2, 3, 9, 5, 7, 3, 2]";
+        JJson json = new JJson(jsonStr);
+        List<Integer> l = json
+                .sort()
+                .toInts();
     }
 
     public static void readJson() {
