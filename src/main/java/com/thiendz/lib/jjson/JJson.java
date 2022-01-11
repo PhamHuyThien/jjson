@@ -14,19 +14,15 @@ public class JJson implements Comparable<JJson> {
     private static final String REGEX_JSON_NAME = "^(\\w+)\\[";
     private static final String REGEX_JSON_KEY_ARRAY = "\\[(\\d+)\\]+";
 
-    private Object json;
+    private final Object json;
 
     public static JJson parse(Object json) {
         return new JJson(json);
     }
 
-    public JJson(Object json) {
-        this.json = json;
-    }
-
-    public JJson(String json) {
-        if (json != null)
-            this.json = JSONValue.parse(json);
+    public JJson(Object object) {
+        Object parseJson = JSONValue.parse(object.toString());
+        this.json = parseJson == null ? object : parseJson;
     }
 
     public JJson k(String key) {
@@ -103,11 +99,11 @@ public class JJson implements Comparable<JJson> {
     }
 
     public JJson sort() {
-        List<JJson> jsonList = toObjs();
+        List<String> jsonList = toStrs();
         if (jsonList == null)
             return this;
         Collections.sort(jsonList);
-        return parse(jsonList.toString());
+        return parse(arraysToString(jsonList));
     }
 
     public JJson reverse() {
@@ -118,7 +114,7 @@ public class JJson implements Comparable<JJson> {
             jsonList.set(i, jsonList.get(idMax));
             jsonList.set(idMax, json);
         }
-        return parse(jsonList.toString());
+        return parse(arraysToString(jsonList));
     }
 
     public Map<String, JJson> toPairObjs() {
@@ -126,10 +122,7 @@ public class JJson implements Comparable<JJson> {
         if (jsonObject == null)
             return null;
         Map<String, JJson> jsonHashMap = new HashMap<>();
-        for (Object o : jsonObject.entrySet()) {
-            Map.Entry pair = (Map.Entry) o;
-            jsonHashMap.put(pair.getKey().toString(), new JJson(pair.getValue()));
-        }
+        jsonObject.forEach((k, v) -> jsonHashMap.put(k.toString(), parse(v)));
         return jsonHashMap;
     }
 
@@ -161,7 +154,7 @@ public class JJson implements Comparable<JJson> {
             return null;
         List<JJson> jsonList = new ArrayList<>();
         for (Object o : jsonArray) {
-            jsonList.add(new JJson(o));
+            jsonList.add(parse(o));
         }
         return jsonList;
     }
@@ -422,5 +415,14 @@ public class JJson implements Comparable<JJson> {
         } catch (NumberFormatException | NullPointerException ignored) {
         }
         return null;
+    }
+
+    private static String arraysToString(List<?> objectList) {
+        StringBuilder stringBuilder = new StringBuilder("[");
+        for (Object obj : objectList) {
+            String str = obj == null ? "" : obj.toString().replaceAll("\"", "\\\\\"");
+            stringBuilder.append("\"").append(str).append("\",");
+        }
+        return stringBuilder.substring(0, stringBuilder.length() - 1) + "]";
     }
 }

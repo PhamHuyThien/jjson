@@ -1,5 +1,7 @@
 package com.thiendz.lib.jjson;
 
+import org.json.simple.JSONValue;
+
 import java.util.List;
 import java.util.Map;
 
@@ -7,14 +9,14 @@ public class JJsonExample {
     public static void main(String[] args) {
 //        readJson();
         sort();
+//        System.out.println(JSONValue.parse("1234567889"));
     }
 
     public static void sort() {
-        String jsonStr = "[1, 2, 3, 9, 5, 7, 3, 2]";
+        String jsonStr = "[1.7, 7, 9, \"b\"]";
         JJson json = new JJson(jsonStr);
-        List<Integer> l = json
-                .sort()
-                .toInts();
+
+        Double a = json.sum().toDouble();
     }
 
     public static void readJson() {
@@ -69,8 +71,12 @@ public class JJsonExample {
             }
         }
 
-        List<String> hobbitListSort = json.q("hobbit").sort().toStrs();
+        List<String> hobbitListSort = json.q(".hobbit").sort().toStrs();
         for (String hobbit : hobbitListSort)
+            System.out.println(hobbit);
+
+        List<String> hobbitListReverse = json.q(".hobbit").reverse().toStrs();
+        for (String hobbit : hobbitListReverse)
             System.out.println(hobbit);
     }
 }
