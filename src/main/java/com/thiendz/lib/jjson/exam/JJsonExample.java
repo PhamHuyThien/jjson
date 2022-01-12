@@ -1,22 +1,13 @@
-package com.thiendz.lib.jjson;
+package com.thiendz.lib.jjson.exam;
 
-import org.json.simple.JSONValue;
+import com.thiendz.lib.jjson.JJson;
 
 import java.util.List;
 import java.util.Map;
 
 public class JJsonExample {
     public static void main(String[] args) {
-//        readJson();
-        sort();
-//        System.out.println(JSONValue.parse("1234567889"));
-    }
-
-    public static void sort() {
-        String jsonStr = "[1.7, 7, 9, \"b\"]";
-        JJson json = new JJson(jsonStr);
-
-        Double a = json.sum().toDouble();
+        readJson();
     }
 
     public static void readJson() {
@@ -41,42 +32,57 @@ public class JJsonExample {
                 "            \"number\":\"0435508028\"\n" +
                 "        }\n" +
                 "    ],\n" +
+                "    \"girlFriend\": false,\n" +
                 "    \"sex\":\"Male\",\n" +
                 "    \"salary\":1200.0,\n" +
                 "    \"hobbit\": [\"watch movie\", \"coding\", \"sleep\"]\n" +
+                "    \"codeLove\": [1, 1, 0, 7, 2, 0, 0, 0, 1107, 2000, 11, 07, 20]\n" +
                 "}";
         JJson json = JJson.parse(jsonStr);
 
         System.out.println("firstName: " + json.q(".firstName").toString());
-        System.out.println("lastName: " + json.q(".lastName").toString());
+
+        System.out.println("lastName: " + json.k("lastName").toString());
+
+        System.out.println("firstName index 0: " + json.k("firstName").toChar());
+
         System.out.println("streetAddress: " + json.q(".address.streetAddress").toString());
+
         System.out.println("postalCode: " + json.q(".address.postalCode").toLong());
+
         System.out.println("salary: " + json.q(".salary").toDouble());
 
+        System.out.println("json.hobbit[1]: " + json.q(".hobbit[1]").toStr());
 
+        System.out.println("json.hobbit[2]: " + json.k("hobbit").i(2).toStr());
+
+        System.out.println("json.girlFriend: " + json.q(".girlFriend").toBool());
+
+        System.out.println("json.address object forEach map:");
         Map<String, JJson> addressMap = json.q(".address").toPairObjs();
         for (Map.Entry<String, JJson> entry : addressMap.entrySet()) {
-            System.out.println(entry.getKey() + " " + entry.getValue());
+            System.out.println(entry.getKey() + ": " + entry.getValue());
         }
 
-        List<String> hobbitList = json.q(".hobbit").toStrs();
-        for (String hobbit : hobbitList)
-            System.out.println(hobbit);
+        System.out.println("json.hobbit list: " + json.q(".hobbit").toStrs());
 
+        System.out.println("json.phoneNumbers array forEach key value:");
         List<JJson> phoneList = json.q(".phoneNumbers").toObjs();
         for (JJson j : phoneList) {
             Map<String, JJson> phone = j.toPairObjs();
             for (Map.Entry<String, JJson> entry : phone.entrySet()) {
-                System.out.println(entry.getKey() + " " + entry.getValue());
+                System.out.println(entry.getKey() + ": " + entry.getValue());
             }
         }
 
-        List<String> hobbitListSort = json.q(".hobbit").sort().toStrs();
-        for (String hobbit : hobbitListSort)
-            System.out.println(hobbit);
-
-        List<String> hobbitListReverse = json.q(".hobbit").reverse().toStrs();
-        for (String hobbit : hobbitListReverse)
-            System.out.println(hobbit);
+        System.out.println("json.hobbit sort string:" + json.q(".hobbit").sort().toStrs());
+        System.out.println("json.hobbit reverse: " + json.q(".hobbit").reverse().toStrs());
+        System.out.println("json.codeLove sort int: " + json.q(".codeLove").sort().toInts());
+        System.out.println("json.codeLove find max: " + json.q(".codeLove").max().toInt());
+        System.out.println("json.codeLove find min: " + json.q(".codeLove").min().toInt());
+        System.out.println("json.codeLove sum: " + json.q(".codeLove").sum().toInt());
+        System.out.println("json.codeLove avg: " + json.q(".codeLove").avg().toInt());
+        System.out.println("json.address get list key: " + json.q(".address").toKeys());
+        System.out.println("json.address get list value: " + json.q(".address").toValues());
     }
 }

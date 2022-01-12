@@ -8,21 +8,24 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class JJson implements Comparable<JJson> {
+public class JJson {
 
     private static final String REGEX_JSON_VALID = "^((\\.\\w+(\\[\\d+\\])*)|((\\[\\d+\\])*))+$";
     private static final String REGEX_JSON_NAME = "^(\\w+)\\[";
     private static final String REGEX_JSON_KEY_ARRAY = "\\[(\\d+)\\]+";
-
-    private final Object json;
+    private static final String REGEX_DOT = "\\.";
+    private static final String REGEX_BRACKET = "\\[|\\]";
+    private Object json;
 
     public static JJson parse(Object json) {
         return new JJson(json);
     }
 
     public JJson(Object object) {
-        Object parseJson = JSONValue.parse(object.toString());
-        this.json = parseJson == null ? object : parseJson;
+        if (object != null) {
+            Object parseJson = JSONValue.parse(object.toString());
+            this.json = parseJson == null ? object : parseJson;
+        }
     }
 
     public JJson k(String key) {
@@ -36,24 +39,24 @@ public class JJson implements Comparable<JJson> {
     }
 
     public JJson q(String query) {
-        if (json == null || stringRegex(REGEX_JSON_VALID, query) == null)
-            return this;
+        if (json == null || stringRegex(REGEX_JSON_VALID, query).isEmpty())
+            return parse(null);
         Object jsonTemp = json;
-        for (String node : query.split("\\.")) {
+        for (String node : query.split(REGEX_DOT)) {
             if (node.equals(""))
                 continue;
             if (query.contains("[")) {
                 if (!query.startsWith("[")) {
-                    String[] names = stringRegex(REGEX_JSON_NAME, node);
-                    if (names != null) {
-                        String name = names[0].replace("[", "");
+                    List<String> nameList = stringRegex(REGEX_JSON_NAME, node);
+                    if (!nameList.isEmpty()) {
+                        String name = nameList.get(0).replace("[", "");
                         jsonTemp = Objects.requireNonNull(toJsonObject(jsonTemp)).get(name);
                     }
                 }
-                String[] strIndexes = stringRegex(REGEX_JSON_KEY_ARRAY, node);
-                if (strIndexes != null) {
-                    for (String strIndex : strIndexes) {
-                        int index = Integer.parseInt(strIndex.replaceAll("\\[|\\]", ""));
+                List<String> indexesList = stringRegex(REGEX_JSON_KEY_ARRAY, node);
+                if (!indexesList.isEmpty()) {
+                    for (String strIndex : indexesList) {
+                        int index = Integer.parseInt(strIndex.replaceAll(REGEX_BRACKET, ""));
                         JSONArray jsonArrayTemp = toJsonArray(jsonTemp);
                         jsonTemp = jsonArrayTemp != null ? jsonArrayTemp.get(index) : null;
                     }
@@ -102,7 +105,13 @@ public class JJson implements Comparable<JJson> {
         List<String> jsonList = toStrs();
         if (jsonList == null)
             return this;
-        Collections.sort(jsonList);
+        jsonList.sort((sThis, sThat) -> {
+            Float fThis = isNumber(sThis);
+            Float fThat = isNumber(sThat);
+            if (fThis != null && fThat != null)
+                return fThis.compareTo(fThat);
+            return sThis.compareTo(sThat);
+        });
         return parse(arraysToString(jsonList));
     }
 
@@ -333,34 +342,6 @@ public class JJson implements Comparable<JJson> {
         return Math.max(objectSize, arraySize);
     }
 
-    @Override
-    public int compareTo(JJson jjson) {
-        if (json == null || jjson == null) {
-            return json == null ? -1 : 1;
-        }
-        String oThis = this.toString();
-        String oThat = jjson.toString();
-        Float fThis = isNumber(oThis);
-        Float fThat = isNumber(oThat);
-        if (fThis != null && fThat != null)
-            return (int) (fThis - fThat);
-        int len1 = oThis.length();
-        int len2 = oThat.length();
-        int lim = Math.min(len1, len2);
-        char[] v1 = oThis.toCharArray();
-        char[] v2 = oThat.toCharArray();
-        int k = 0;
-        while (k < lim) {
-            char c1 = v1[k];
-            char c2 = v2[k];
-            if (c1 != c2) {
-                return c1 - c2;
-            }
-            k++;
-        }
-        return len1 - len2;
-    }
-
     private static JSONObject toJsonObject(Object json) {
         return isInstanceOfJsonObject(json) ? (JSONObject) JSONValue.parse(json.toString()) : null;
     }
@@ -377,36 +358,21 @@ public class JJson implements Comparable<JJson> {
         return (json instanceof JSONArray || json instanceof JJson);
     }
 
-    private static String[] stringRegex(String regex, String input) {
+    private static List<String> stringRegex(String regex, String input) {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(input);
-
         ArrayList<String> alMatch = new ArrayList<>();
-        while (m.find()) {
+        while (m.find())
             alMatch.add(m.group());
-        }
-        String[] matches = new String[alMatch.size()];
-        for (int i = 0; i < matches.length; i++) {
-            matches[i] = alMatch.get(i);
-        }
-        return matches.length == 0 ? null : matches;
+        return alMatch;
     }
 
     private static String strToInt(String fl) {
-        if (fl.contains(".")) {
-            return fl.substring(0, fl.indexOf("."));
-        }
-        return fl;
+        return fl.contains(".") ? fl.substring(0, fl.indexOf(".")) : fl;
     }
 
     private static float sumFloat(List<Float> floatList) {
-        float fl = 0;
-        int size = floatList.size();
-        for (int i = 0; i < size / 2; i++) {
-            fl += floatList.get(i) + floatList.get(size - 1 - i);
-        }
-        fl += size % 2 == 0 ? 0 : floatList.get(size / 2);
-        return fl;
+        return floatList.stream().reduce((float) 0, (total, elm) -> elm != null ? total + elm : total);
     }
 
     private static Float isNumber(String num) {
